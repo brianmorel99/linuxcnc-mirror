@@ -151,8 +151,8 @@ fi
     introspect 30
 
 
-    # give linuxcnc a second to finish
-    sleep 1.0
+    # give linuxcnc *five* seconds to finish:  race condition alert!
+    sleep 5.0
 
     echo shutdown
 ) | nc localhost 5007
