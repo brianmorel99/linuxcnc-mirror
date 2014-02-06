@@ -19,6 +19,9 @@ import subprocess
 
 config = {}
 
+# enabled build docs
+config['build-docs'] = set()
+
 # enabled flavor names
 config['flavors'] = set()
 
@@ -185,7 +188,8 @@ def subst(infile, outfile, config):
             + " -e 's`@XENOMAI_RECOMMENDS@`%s`g'" % ', '.join(config['xenomai-recommends'])
             + " -e 's`@XENOMAI_KERNEL_DEPENDS@`%s`g'" % ', '.join(config['xenomai-kernel-depends'])
             + " -e 's`@XENOMAI_KERNEL_RECOMMENDS@`%s`g'" % ', '.join(config['xenomai-kernel-recommends'])
-            + " %s > %s" % (infile, outfile),
+            + " -e 's`@BUILD_DOCS@`%s`g'" % ', '.join(config['build-docs'])
+         + " %s > %s" % (infile, outfile),
             shell=True
         )
         if retcode < 0:
@@ -200,6 +204,8 @@ config['flavors'].add('posix')
 # save off the arguments the user just gave us
 config['debian/configure'] = sys.argv[1:]
 
+# default to build doc packages
+config['build-docs'].add('Y')
 
 if len(sys.argv) == 1 or sys.argv[1] == '-h' or sys.argv[1] == '--help':
     usage()
@@ -223,6 +229,11 @@ else:
     print "invalid command line"
     usage
     sys.exit(1)
+
+if len(sys.argv) == 3 and sys.argv[2] == '--no-docs':
+    # disable building of docs        
+    config['build-docs'].clear()
+    config['build-docs'].add('N')
 
 
 configure_for_distro(config)
@@ -273,6 +284,10 @@ config['suggests'].add(', '.join(flavor_packages))
 subst('control.in', 'control', config)
 for flavor in (config['flavors']):
     add_flavor_to_control(flavor, config)
+
+for test in (config['build-docs']):
+    if test == "Y":
+        append_file('control.doc', 'control')
 
 subst('rules.in', 'rules', config)
 mode = os.stat('rules').st_mode
